@@ -3,6 +3,9 @@ import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { ProblemError } from '../errors/ProblemError';
 import env from '../config/env';
+import { LogManager } from '../utils/logManager';
+
+const logManager = LogManager.getInstance();
 
 /**
  * Helper to send RFC 7807 problem response
@@ -68,11 +71,26 @@ export const errorHandler = (
 ): void => {
   // Already a ProblemError
   if (err instanceof ProblemError) {
+    logManager.logError({
+      level: err.status >= 500 ? 'error' : 'warn',
+      message: err.message,
+      metadata: {
+        status: err.status,
+        type: err.type,
+      },
+    });
     return sendProblem(res, err);
   }
 
   // Zod validation errors
   if (err instanceof ZodError) {
+    logManager.logError({
+      level: 'warn',
+      message: 'Validation failed',
+      metadata: {
+        errors: err.errors,
+      },
+    });
     return sendProblem(
       res,
       ProblemError.unprocessableEntity('Validation failed', {
@@ -86,10 +104,24 @@ export const errorHandler = (
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    logManager.logError({
+      level: 'error',
+      message: 'Database error',
+      error: err,
+      metadata: {
+        code: err.code,
+        meta: err.meta,
+      },
+    });
     return sendProblem(res, mapPrismaError(err));
   }
 
   if (err instanceof Prisma.PrismaClientValidationError) {
+    logManager.logError({
+      level: 'error',
+      message: 'Database validation error',
+      error: err,
+    });
     return sendProblem(
       res,
       ProblemError.badRequest(err.message || 'Invalid data provided'),
@@ -97,7 +129,16 @@ export const errorHandler = (
   }
 
   // Unknown errors
-  console.error('Unexpected error:', err);
+  logManager.logError({
+    level: 'error',
+    message: 'Unexpected error occurred',
+    error: err,
+    metadata: {
+      name: err.name,
+      stack: env.NODE_ENV === 'development' ? err.stack : undefined,
+    },
+  });
+
   const detail =
     env.NODE_ENV === 'production'
       ? 'An internal server error occurred'
