@@ -1,10 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import 'express-async-errors';
 import env from './config/env';
 import routes from './routes';
-import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
+import { errorHandler } from './middleware/errorHandler';
 import {
   LATEST_VERSION,
   SUPPORTED_VERSIONS,
@@ -36,7 +37,6 @@ app.use('/api', routes);
 // 404 handler
 app.use(notFound);
 
-// Error handler
 app.use(errorHandler);
 
 const PORT = env.PORT;

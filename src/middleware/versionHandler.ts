@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { AppError } from './errorHandler';
+import { ProblemError } from '../errors/ProblemError';
 
 export const SUPPORTED_VERSIONS = ['v1'] as const;
 export type ApiVersion = (typeof SUPPORTED_VERSIONS)[number];
@@ -62,11 +62,14 @@ export class VersionHandler {
     const normalized = this.normalizeVersion(version);
 
     if (!this.supportedVersions.includes(normalized)) {
-      throw new AppError(
-        400,
+      throw ProblemError.badRequest(
         `Unsupported API version: ${version}. Supported versions: ${this.supportedVersions.join(
           ', ',
         )}`,
+        {
+          supportedVersions: this.supportedVersions,
+          requestedVersion: version,
+        },
       );
     }
 
