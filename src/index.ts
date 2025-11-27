@@ -12,6 +12,7 @@ import {
   LATEST_VERSION,
   SUPPORTED_VERSIONS,
 } from './middleware/versionHandler';
+import { jsendMiddleware } from './utils/responseHelper';
 
 const app = express();
 
@@ -50,16 +51,21 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// JSend response middleware
+app.use(jsendMiddleware);
+
 app.get('/health', (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    api: {
-      latestVersion: LATEST_VERSION,
-      supportedVersions: SUPPORTED_VERSIONS,
+  res.jsendSuccess(
+    {
+      server: 'running',
+      api: {
+        latestVersion: LATEST_VERSION,
+        supportedVersions: SUPPORTED_VERSIONS,
+      },
     },
-  });
+    200,
+    'Server is running',
+  );
 });
 
 // API routes
