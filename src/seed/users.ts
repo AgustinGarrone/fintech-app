@@ -21,12 +21,12 @@ async function main() {
     {
       email: 'user2@test.com',
       name: 'Usuario Test 2',
-      balance: new Decimal(5000.0),
+      balance: new Decimal(800000.0),
     },
     {
       email: 'user3@test.com',
       name: 'Usuario Test 3',
-      balance: new Decimal(2500.75),
+      balance: new Decimal(150000.75),
     },
     {
       email: 'user4@test.com',

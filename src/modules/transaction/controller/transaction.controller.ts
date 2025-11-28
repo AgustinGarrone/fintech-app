@@ -3,10 +3,10 @@ import TransactionService from '../service/transaction.service';
 import { Transaction } from '@prisma/client';
 
 class TransactionController {
-  /**
-   * POST /transactions
-   * Create a transaction between two users
-   */
+  private readonly transactionService: typeof TransactionService;
+  constructor() {
+    this.transactionService = TransactionService;
+  }
   async create(req: Request, res: Response): Promise<void> {
     const { fromUserId, toUserId, amount } = req.body;
 
@@ -22,10 +22,6 @@ class TransactionController {
     );
   }
 
-  /**
-   * GET /transactions?userId=''
-   * Get transactions by user ID
-   */
   async getByUserId(req: Request, res: Response): Promise<void> {
     const { userId } = req.query;
 
@@ -49,10 +45,6 @@ class TransactionController {
     );
   }
 
-  /**
-   * PATCH /transactions/:id/approve
-   * Approve a pending transaction
-   */
   async approve(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
 
@@ -74,10 +66,6 @@ class TransactionController {
     );
   }
 
-  /**
-   * PATCH /transactions/:id/reject
-   * Reject a pending transaction
-   */
   async reject(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
 

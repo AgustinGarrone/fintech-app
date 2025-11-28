@@ -13,6 +13,8 @@ import {
   SUPPORTED_VERSIONS,
 } from './middleware/versionHandler';
 import { jsendMiddleware } from './utils/responseHelper';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 const app = express();
 
@@ -53,6 +55,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // JSend response middleware
 app.use(jsendMiddleware);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/health', (_req, res) => {
   res.jsendSuccess(
