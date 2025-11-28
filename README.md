@@ -2,6 +2,26 @@
 
 API REST para gestión de transacciones financieras construida con TypeScript, Express y PostgreSQL. Implementa arquitectura modular, control de concurrencia optimista, logging estructurado de errores de sistema y auditoría y documentación OpenAPI.
 
+## 📑 Índice
+
+- [🚀 Características Clave](#-características-clave)
+  - [Arquitectura](#arquitectura)
+  - [Transacciones Financieras](#transacciones-financieras)
+  - [Seguridad y Validación](#seguridad-y-validación)
+  - [Observabilidad](#observabilidad)
+  - [Documentación](#documentación)
+  - [Testing](#testing)
+- [🔌 Endpoints Principales](#-endpoints-principales)
+- [🔒 Características de Seguridad](#-características-de-seguridad)
+- [🧪 Testing](#-testing-1)
+- [📚 Documentación API](#-documentación-api)
+- [📋 Logging](#-logging)
+- [🛠️ Instalación y Configuración](#️-instalación-y-configuración)
+  - [Prerrequisitos](#prerrequisitos)
+  - [💡 Uso](#-uso)
+  - [Setup Recomendado: Docker 🐳](#setup-recomendado-docker-)
+  - [Setup Manual (Alternativa)](#setup-manual-alternativa)
+
 ## 🚀 Características Clave
 
 ### Arquitectura
@@ -45,8 +65,6 @@ API REST para gestión de transacciones financieras construida con TypeScript, E
 ### Testing
 
 Casos de uso básicos
-
-## 🛠️ Instalación y Configuración
 
 ## 🔌 Endpoints Principales
 
@@ -118,16 +136,24 @@ Formato: `{type}-{transactionId}-{timestamp}.json`
 - PostgreSQL >= 16
 - npm o yarn
 
+### 💡 Uso
+
+Al ejecutar el seed de la base de datos, se crean usuarios de prueba con saldos iniciales. **En los logs de la app** podrás ver la información completa de cada usuario creado, incluyendo:
+
+- **ID único** de cada usuario (UUID)
+- **Email** del usuario
+- **Nombre** del usuario
+- **Balance inicial** en formato moneda
+
+Estos usuarios están listos para usar en tus pruebas. Puedes copiar los IDs directamente de los logs y utilizarlos en tus requests a la API para crear transacciones, consultar saldos, etc.
+
 ### Setup Recomendado: Docker 🐳
 
 **Recomiendo usar Docker** para una configuración rápida y consistente, para el desafío le puse más énfasis a este tipo de despliegue
 
 ```bash
-# Construir y ejecutar con Docker Compose
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f app
+# Construir y ejecutar todos los servicios mostrando los logs
+docker-compose up --build
 ```
 
 El contenedor se encarga automáticamente de:
