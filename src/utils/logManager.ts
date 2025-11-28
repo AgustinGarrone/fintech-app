@@ -1,3 +1,5 @@
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join } from 'path';
 import { auditLogger as pinoAuditLogger, errorLogger } from '../config/logger';
 import {
   AuditLog,
@@ -11,14 +13,47 @@ import {
  */
 export class LogManager {
   private static instance: LogManager;
+  private readonly LOGS_DIR = join(process.cwd(), 'temp', 'logs');
 
-  private constructor() {}
+  private constructor() {
+    // Ensure logs directory exists
+    if (!existsSync(this.LOGS_DIR)) {
+      mkdirSync(this.LOGS_DIR, { recursive: true });
+    }
+  }
 
   public static getInstance(): LogManager {
     if (!LogManager.instance) {
       LogManager.instance = new LogManager();
     }
     return LogManager.instance;
+  }
+
+  private getLogFilePath(
+    type: 'audit' | 'error',
+    userId?: string,
+    transactionId?: string,
+  ): string {
+    const date = new Date();
+    const dateStr = date.toISOString().split('T')[0];
+    const dateDir = join(this.LOGS_DIR, dateStr || '');
+
+    if (!existsSync(dateDir)) {
+      mkdirSync(dateDir, { recursive: true });
+    }
+
+    const fileName = `${type}-${transactionId || 'general'}-${Date.now()}.json`;
+    return join(dateDir, fileName);
+  }
+
+  private writeLogToFile(filePath: string, logData: AuditLog | ErrorLog): void {
+    try {
+      const logContent = JSON.stringify(logData, null, 2) + '\n';
+      writeFileSync(filePath, logContent, { flag: 'a' });
+    } catch (error) {
+      console.error('Failed to write log to file:', error);
+      console.log('Log data:', logData);
+    }
   }
 
   /**
@@ -43,6 +78,13 @@ export class LogManager {
       auditLog,
       `Transaction ${data.event}: ${data.transactionId}`,
     );
+
+    const filePath = this.getLogFilePath(
+      'audit',
+      data.userId,
+      data.transactionId,
+    );
+    this.writeLogToFile(filePath, auditLog);
   }
 
   /**
@@ -71,5 +113,12 @@ export class LogManager {
     } else {
       errorLogger.error(errorLog, data.message);
     }
+
+    const filePath = this.getLogFilePath(
+      'error',
+      data.userId,
+      data.transactionId,
+    );
+    this.writeLogToFile(filePath, errorLog);
   }
 }

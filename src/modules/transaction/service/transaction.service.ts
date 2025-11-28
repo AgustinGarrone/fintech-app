@@ -11,6 +11,7 @@ import UserService from '../../user/service/user.service';
 import prisma from '../../../config/database';
 import TransactionMapper from '../mapper/transaction.mapper';
 import { TransactionHistoryResponse } from '../dto/transaction.dto';
+import { LogManager } from '../../../utils/logManager';
 
 export class TransactionService extends BaseService<
   Transaction,
@@ -18,9 +19,11 @@ export class TransactionService extends BaseService<
 > {
   private static instance: TransactionService;
   private readonly MAX_AUTO_APPROVE_AMOUNT = 50000;
+  private readonly logManager: LogManager;
 
   private constructor() {
     super(TransactionRepository);
+    this.logManager = LogManager.getInstance();
   }
 
   public static getInstance(): TransactionService {
@@ -75,10 +78,14 @@ export class TransactionService extends BaseService<
         },
         tx,
       );
-      console.log('transaction status', status);
       if (status === TransactionStatusEnum.APPROVED) {
-        console.log('processing transfer');
-        await this.processTransfer(fromUser, toUser, amount, tx);
+        await this.processTransfer(
+          fromUser,
+          toUser,
+          amount,
+          transaction.id,
+          tx,
+        );
       }
 
       return transaction;
@@ -143,7 +150,7 @@ export class TransactionService extends BaseService<
       }
 
       // Process transfer
-      await this.processTransfer(fromUser, toUser, amount, tx);
+      await this.processTransfer(fromUser, toUser, amount, transactionId, tx);
 
       // Update transaction status
       return this.update(
@@ -189,6 +196,7 @@ export class TransactionService extends BaseService<
     fromUser: { id: string; balance: Prisma.Decimal },
     toUser: { id: string; balance: Prisma.Decimal },
     amount: number,
+    transactionId: string,
     tx: any,
   ): Promise<void> {
     const fromBalance = Number(fromUser.balance);
@@ -206,6 +214,17 @@ export class TransactionService extends BaseService<
         tx,
       ),
     ]);
+
+    this.logManager.logTransaction({
+      event: 'transfer',
+      transactionId: transactionId,
+      userId: fromUser.id,
+      amount,
+      currency: 'ARS',
+      previousBalance: fromBalance,
+      newBalance: fromBalance - amount,
+      status: TransactionStatusEnum.APPROVED,
+    });
   }
 }
 
