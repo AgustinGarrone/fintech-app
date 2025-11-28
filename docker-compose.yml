@@ -35,7 +35,7 @@ services:
       - '3000:3000'
     command: >
       sh -c "
-        npx prisma migrate deploy &&
+        npx prisma migrate dev --name init &&
         npx prisma db seed &&
         node dist/index.js
       "
