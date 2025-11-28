@@ -62,20 +62,6 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-/* 
-app.get('/health', (_req, res) => {
-  res.jsendSuccess(
-    {
-      server: 'running',
-      api: {
-        latestVersion: LATEST_VERSION,
-        supportedVersions: SUPPORTED_VERSIONS,
-      },
-    },
-    200,
-    'Server is running',
-  );
-}); */
 
 // API routes
 app.use('/api', routes);
