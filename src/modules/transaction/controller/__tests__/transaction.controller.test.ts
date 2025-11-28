@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import TransactionController from '../transaction.controller';
 import TransactionService from '../../service/transaction.service';
-import { Transaction, TransactionStatus } from '@prisma/client';
+import { Transaction, TransactionStatus, Prisma } from '@prisma/client';
 import { ProblemError } from '../../../../errors/ProblemError';
 import { TransactionHistoryResponse } from '../../dto/transaction.dto';
+import { JSendBuilderService } from '../../../../utils/jsendBuilder';
 
 // Mock TransactionService
 jest.mock('../../service/transaction.service', () => ({
@@ -13,6 +14,15 @@ jest.mock('../../service/transaction.service', () => ({
     getTransactionsByUserId: jest.fn(),
     approveTransaction: jest.fn(),
     rejectTransaction: jest.fn(),
+  },
+}));
+
+// Mock JSendBuilderService
+jest.mock('../../../../utils/jsendBuilder', () => ({
+  JSendBuilderService: {
+    created: jest.fn(),
+    success: jest.fn(),
+    fail: jest.fn(),
   },
 }));
 
@@ -27,9 +37,6 @@ describe('TransactionController', () => {
 
     // Mock Response object
     mockResponse = {
-      jsendCreated: jest.fn().mockReturnThis(),
-      jsendSuccess: jest.fn().mockReturnThis(),
-      jsendFail: jest.fn().mockReturnThis(),
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     } as any;
@@ -41,10 +48,16 @@ describe('TransactionController', () => {
         id: 'tx-123',
         fromUserId: 'user-1',
         toUserId: 'user-2',
-        amount: new (require('@prisma/client').Prisma.Decimal)(1000),
+        amount: new Prisma.Decimal(1000),
         status: TransactionStatus.APPROVED,
         createdAt: new Date(),
         updatedAt: new Date(),
+      };
+
+      const mockJSendResponse = {
+        status: 'success',
+        data: mockTransaction,
+        message: 'Transaction created successfully',
       };
 
       mockRequest = {
@@ -58,6 +71,9 @@ describe('TransactionController', () => {
       (TransactionService.createTransaction as jest.Mock).mockResolvedValue(
         mockTransaction,
       );
+      (JSendBuilderService.created as jest.Mock).mockReturnValue(
+        mockJSendResponse,
+      );
 
       await controller.create(mockRequest as Request, mockResponse as Response);
 
@@ -66,10 +82,12 @@ describe('TransactionController', () => {
         'user-2',
         1000,
       );
-      expect(mockResponse.jsendCreated).toHaveBeenCalledWith(
+      expect(JSendBuilderService.created).toHaveBeenCalledWith(
         mockTransaction,
         'Transaction created successfully',
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendResponse);
     });
 
     it('should fail when validation error occurs', async () => {
@@ -101,6 +119,12 @@ describe('TransactionController', () => {
         receivedTransactions: [],
       };
 
+      const mockJSendResponse = {
+        status: 'success',
+        data: mockHistory,
+        message: 'Transactions retrieved successfully',
+      };
+
       mockRequest = {
         query: {
           userId: 'user-1',
@@ -110,6 +134,9 @@ describe('TransactionController', () => {
       (
         TransactionService.getTransactionsByUserId as jest.Mock
       ).mockResolvedValue(mockHistory);
+      (JSendBuilderService.success as jest.Mock).mockReturnValue(
+        mockJSendResponse,
+      );
 
       await controller.getByUserId(
         mockRequest as Request,
@@ -119,17 +146,28 @@ describe('TransactionController', () => {
       expect(TransactionService.getTransactionsByUserId).toHaveBeenCalledWith(
         'user-1',
       );
-      expect(mockResponse.jsendSuccess).toHaveBeenCalledWith(
+      expect(JSendBuilderService.success).toHaveBeenCalledWith(
         mockHistory,
-        200,
         'Transactions retrieved successfully',
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendResponse);
     });
 
     it('should fail when userId is missing', async () => {
+      const mockJSendFailResponse = {
+        status: 'fail',
+        data: { userId: 'userId query parameter is required' },
+        message: 'Missing required parameter',
+      };
+
       mockRequest = {
         query: {},
       };
+
+      (JSendBuilderService.fail as jest.Mock).mockReturnValue(
+        mockJSendFailResponse,
+      );
 
       await controller.getByUserId(
         mockRequest as Request,
@@ -137,11 +175,12 @@ describe('TransactionController', () => {
       );
 
       expect(TransactionService.getTransactionsByUserId).not.toHaveBeenCalled();
-      expect(mockResponse.jsendFail).toHaveBeenCalledWith(
+      expect(JSendBuilderService.fail).toHaveBeenCalledWith(
         { userId: 'userId query parameter is required' },
         'Missing required parameter',
-        400,
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendFailResponse);
     });
   });
 
@@ -151,10 +190,16 @@ describe('TransactionController', () => {
         id: 'tx-123',
         fromUserId: 'user-1',
         toUserId: 'user-2',
-        amount: new (require('@prisma/client').Prisma.Decimal)(1000),
+        amount: new Prisma.Decimal(1000),
         status: TransactionStatus.APPROVED,
         createdAt: new Date(),
         updatedAt: new Date(),
+      };
+
+      const mockJSendResponse = {
+        status: 'success',
+        data: mockTransaction,
+        message: 'Transaction approved and processed successfully',
       };
 
       mockRequest = {
@@ -166,6 +211,9 @@ describe('TransactionController', () => {
       (TransactionService.approveTransaction as jest.Mock).mockResolvedValue(
         mockTransaction,
       );
+      (JSendBuilderService.success as jest.Mock).mockReturnValue(
+        mockJSendResponse,
+      );
 
       await controller.approve(
         mockRequest as Request,
@@ -175,17 +223,28 @@ describe('TransactionController', () => {
       expect(TransactionService.approveTransaction).toHaveBeenCalledWith(
         'tx-123',
       );
-      expect(mockResponse.jsendSuccess).toHaveBeenCalledWith(
+      expect(JSendBuilderService.success).toHaveBeenCalledWith(
         mockTransaction,
-        200,
         'Transaction approved and processed successfully',
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendResponse);
     });
 
     it('should fail when transaction id is missing', async () => {
+      const mockJSendFailResponse = {
+        status: 'fail',
+        data: { id: 'Transaction ID is required' },
+        message: 'Missing required parameter',
+      };
+
       mockRequest = {
         params: {},
       };
+
+      (JSendBuilderService.fail as jest.Mock).mockReturnValue(
+        mockJSendFailResponse,
+      );
 
       await controller.approve(
         mockRequest as Request,
@@ -193,11 +252,12 @@ describe('TransactionController', () => {
       );
 
       expect(TransactionService.approveTransaction).not.toHaveBeenCalled();
-      expect(mockResponse.jsendFail).toHaveBeenCalledWith(
+      expect(JSendBuilderService.fail).toHaveBeenCalledWith(
         { id: 'Transaction ID is required' },
         'Missing required parameter',
-        400,
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendFailResponse);
     });
   });
 
@@ -207,10 +267,16 @@ describe('TransactionController', () => {
         id: 'tx-123',
         fromUserId: 'user-1',
         toUserId: 'user-2',
-        amount: new (require('@prisma/client').Prisma.Decimal)(1000),
+        amount: new Prisma.Decimal(1000),
         status: TransactionStatus.REJECTED,
         createdAt: new Date(),
         updatedAt: new Date(),
+      };
+
+      const mockJSendResponse = {
+        status: 'success',
+        data: mockTransaction,
+        message: 'Transaction rejected successfully',
       };
 
       mockRequest = {
@@ -222,32 +288,47 @@ describe('TransactionController', () => {
       (TransactionService.rejectTransaction as jest.Mock).mockResolvedValue(
         mockTransaction,
       );
+      (JSendBuilderService.success as jest.Mock).mockReturnValue(
+        mockJSendResponse,
+      );
 
       await controller.reject(mockRequest as Request, mockResponse as Response);
 
       expect(TransactionService.rejectTransaction).toHaveBeenCalledWith(
         'tx-123',
       );
-      expect(mockResponse.jsendSuccess).toHaveBeenCalledWith(
+      expect(JSendBuilderService.success).toHaveBeenCalledWith(
         mockTransaction,
-        200,
         'Transaction rejected successfully',
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendResponse);
     });
 
     it('should fail when transaction id is missing', async () => {
+      const mockJSendFailResponse = {
+        status: 'fail',
+        data: { id: 'Transaction ID is required' },
+        message: 'Missing required parameter',
+      };
+
       mockRequest = {
         params: {},
       };
 
+      (JSendBuilderService.fail as jest.Mock).mockReturnValue(
+        mockJSendFailResponse,
+      );
+
       await controller.reject(mockRequest as Request, mockResponse as Response);
 
       expect(TransactionService.rejectTransaction).not.toHaveBeenCalled();
-      expect(mockResponse.jsendFail).toHaveBeenCalledWith(
+      expect(JSendBuilderService.fail).toHaveBeenCalledWith(
         { id: 'Transaction ID is required' },
         'Missing required parameter',
-        400,
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockJSendFailResponse);
     });
   });
 });
