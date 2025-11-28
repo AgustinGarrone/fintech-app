@@ -4,7 +4,7 @@ import TransactionController from '../../modules/transaction/controller/transact
 import {
   createTransactionSchema,
   getTransactionsQuerySchema,
-} from '../../modules/transaction/validator/transactionValidator';
+} from '../../modules/transaction/validator/transaction.validator';
 
 const router = Router();
 

@@ -66,8 +66,10 @@ export class LogManager {
       metadata: data.metadata,
     };
 
-    const logMethod =
-      data.level === 'warn' ? errorLogger.warn : errorLogger.error;
-    logMethod(errorLog, data.message);
+    if (data.level === 'warn') {
+      errorLogger.warn(errorLog, data.message);
+    } else {
+      errorLogger.error(errorLog, data.message);
+    }
   }
 }

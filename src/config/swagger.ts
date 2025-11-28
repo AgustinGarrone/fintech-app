@@ -24,6 +24,10 @@ const options: swaggerJsdoc.Options = {
     ],
     tags: [
       {
+        name: 'Users',
+        description: 'Endpoints para gestión de usuarios',
+      },
+      {
         name: 'Transactions',
         description: 'Endpoints para gestión de transacciones',
       },

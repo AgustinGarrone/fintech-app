@@ -23,6 +23,11 @@ export class UserService extends BaseService<User, Prisma.UserDelegate> {
   ): Promise<User> {
     return userRepository.updateBalance(userId, newBalance, tx);
   }
+
+  async getBalance(userId: string, tx?: PrismaClient): Promise<number> {
+    const user = await this.findByIdOrFail(userId, tx, 'User');
+    return Number(user.balance);
+  }
 }
 
 export default UserService.getInstance();

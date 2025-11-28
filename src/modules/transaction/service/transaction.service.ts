@@ -4,6 +4,7 @@ import { ProblemError } from '../../../errors/ProblemError';
 import TransactionRepository from '../repository/transaction.repository';
 import UserService from '../../user/service/user.service';
 import prisma from '../../../config/database';
+import { TransactionStatusEnum } from '../../../types/transaction';
 
 export class TransactionService extends BaseService<
   Transaction,
@@ -51,7 +52,9 @@ export class TransactionService extends BaseService<
 
       // Determine status based on amount
       const status =
-        amount > this.MAX_AUTO_APPROVE_AMOUNT ? 'PENDING' : 'APPROVED';
+        amount > this.MAX_AUTO_APPROVE_AMOUNT
+          ? TransactionStatusEnum.PENDING
+          : TransactionStatusEnum.APPROVED;
 
       // Create transaction
       const transaction = await this.create(
@@ -67,7 +70,7 @@ export class TransactionService extends BaseService<
       );
 
       // If auto-approved, process the transfer
-      if (status === 'APPROVED') {
+      if (status === TransactionStatusEnum.APPROVED) {
         await this.processTransfer(fromUser, toUser, amount, tx);
       }
 
@@ -111,7 +114,7 @@ export class TransactionService extends BaseService<
 
       // Verify transaction is pending
       const txStatus = (transaction as any).status;
-      if (txStatus !== 'PENDING') {
+      if (txStatus !== TransactionStatusEnum.PENDING) {
         throw ProblemError.badRequest(
           'Only pending transactions can be approved',
           {
@@ -149,7 +152,9 @@ export class TransactionService extends BaseService<
       return this.update(
         {
           where: { id: transactionId },
-          data: { status: 'APPROVED' } as any,
+          data: {
+            status: TransactionStatusEnum.APPROVED,
+          } as Prisma.TransactionUpdateInput,
         },
         tx,
       );
@@ -168,7 +173,7 @@ export class TransactionService extends BaseService<
 
     // Verify transaction is pending
     const txStatus = (transaction as any).status;
-    if (txStatus !== 'PENDING') {
+    if (txStatus !== TransactionStatusEnum.PENDING) {
       throw ProblemError.badRequest(
         'Only pending transactions can be rejected',
         {
