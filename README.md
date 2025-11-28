@@ -117,6 +117,7 @@ npm run test:coverage
 La documentación interactiva está disponible en:
 
 - **Swagger UI**: `http://localhost:3000/api-docs`
+- Además hay una colección de postman en la carpeta raiz.
 
 ## 📋 Logging
 
@@ -152,6 +153,7 @@ Estos usuarios están listos para usar en tus pruebas. Puedes copiar los IDs dir
 **Recomiendo usar Docker** para una configuración rápida y consistente, para el desafío le puse más énfasis a este tipo de despliegue
 
 ```bash
+cd fintech-app
 # Construir y ejecutar todos los servicios mostrando los logs
 docker-compose up --build
 ```
@@ -168,6 +170,7 @@ El contenedor se encarga automáticamente de:
 Si preferís ejecutar localmente sin Docker:
 
 ```bash
+cd fintech-app
 # Instalar dependencias
 npm install
 
