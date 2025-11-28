@@ -4,11 +4,6 @@
  */
 export interface ProblemDetails {
   /**
-   * A URI reference that identifies the problem type
-   */
-  type: string;
-
-  /**
    * A short, human-readable summary of the problem type
    */
   title: string;

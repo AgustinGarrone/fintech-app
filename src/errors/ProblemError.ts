@@ -1,24 +1,6 @@
 import { ProblemDetails } from '../types/rfc7807';
 
 /**
- * Base URL for problem types
- */
-const PROBLEM_TYPE_BASE = 'https://api.fintech.com/problems';
-
-/**
- * Default problem types by HTTP status code
- */
-const DEFAULT_PROBLEM_TYPES: Record<number, string> = {
-  400: `${PROBLEM_TYPE_BASE}/bad-request`,
-  401: `${PROBLEM_TYPE_BASE}/unauthorized`,
-  403: `${PROBLEM_TYPE_BASE}/forbidden`,
-  404: `${PROBLEM_TYPE_BASE}/not-found`,
-  409: `${PROBLEM_TYPE_BASE}/conflict`,
-  422: `${PROBLEM_TYPE_BASE}/unprocessable-entity`,
-  500: `${PROBLEM_TYPE_BASE}/internal-server-error`,
-};
-
-/**
  * Default titles by HTTP status code
  */
 const DEFAULT_TITLES: Record<number, string> = {
@@ -37,7 +19,6 @@ const DEFAULT_TITLES: Record<number, string> = {
 export class ProblemError extends Error {
   public readonly status: number;
   public readonly title: string;
-  public readonly type: string;
   public readonly detail?: string;
   public readonly instance?: string;
   public readonly extensions: Record<string, unknown>;
@@ -47,7 +28,6 @@ export class ProblemError extends Error {
     title: string,
     detail?: string,
     options?: {
-      type?: string;
       instance?: string;
       extensions?: Record<string, unknown>;
     },
@@ -56,10 +36,6 @@ export class ProblemError extends Error {
     this.name = 'ProblemError';
     this.status = status;
     this.title = title || DEFAULT_TITLES[status] || 'Error';
-    this.type =
-      options?.type ||
-      DEFAULT_PROBLEM_TYPES[status] ||
-      `${PROBLEM_TYPE_BASE}/error`;
     this.detail = detail;
     this.instance = options?.instance;
     this.extensions = options?.extensions || {};
@@ -75,7 +51,6 @@ export class ProblemError extends Error {
    */
   toJSON(): ProblemDetails {
     const problem: ProblemDetails = {
-      type: this.type,
       title: this.title,
       status: this.status,
     };

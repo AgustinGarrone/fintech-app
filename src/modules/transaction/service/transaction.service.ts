@@ -60,8 +60,8 @@ export class TransactionService extends BaseService<
       // Determine status based on amount
       const status =
         amount > this.MAX_AUTO_APPROVE_AMOUNT
-          ? TransactionStatusEnum.APPROVED
-          : TransactionStatusEnum.PENDING;
+          ? TransactionStatusEnum.PENDING
+          : TransactionStatusEnum.APPROVED;
 
       // Create transaction
       const transaction = await this.create(
@@ -75,8 +75,9 @@ export class TransactionService extends BaseService<
         },
         tx,
       );
-
+      console.log('transaction status', status);
       if (status === TransactionStatusEnum.APPROVED) {
+        console.log('processing transfer');
         await this.processTransfer(fromUser, toUser, amount, tx);
       }
 

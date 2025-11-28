@@ -2,13 +2,19 @@ import { Request, Response } from 'express';
 import TransactionService from '../service/transaction.service';
 import { Transaction } from '@prisma/client';
 import { TransactionHistoryResponse } from '../dto/transaction.dto';
+import { JSendSuccessResponse, JSendFailResponse } from '../../../types/jsend';
+import { JSendBuilderService as JSendBuilder } from '../../../utils/jsendBuilder';
 
 class TransactionController {
   private readonly transactionService: typeof TransactionService;
   constructor() {
     this.transactionService = TransactionService;
   }
-  async create(req: Request, res: Response): Promise<void> {
+
+  async create(
+    req: Request,
+    res: Response,
+  ): Promise<Response<JSendSuccessResponse<Transaction>>> {
     const { fromUserId, toUserId, amount } = req.body;
 
     const transaction = await TransactionService.createTransaction(
@@ -17,75 +23,93 @@ class TransactionController {
       amount,
     );
 
-    res.jsendCreated<Transaction>(
+    const response = JSendBuilder.created<Transaction>(
       transaction,
       'Transaction created successfully',
     );
+
+    return res.status(201).json(response);
   }
 
-  async getByUserId(req: Request, res: Response): Promise<void> {
+  async getByUserId(
+    req: Request,
+    res: Response,
+  ): Promise<
+    | Response<JSendSuccessResponse<TransactionHistoryResponse>>
+    | Response<JSendFailResponse>
+  > {
     const { userId } = req.query;
 
     if (!userId || typeof userId !== 'string') {
-      res.jsendFail(
+      const response = JSendBuilder.fail(
         { userId: 'userId query parameter is required' },
         'Missing required parameter',
-        400,
       );
-      return;
+      return res.status(400).json(response);
     }
 
     const transactionHistory = await TransactionService.getTransactionsByUserId(
       userId,
     );
 
-    res.jsendSuccess<TransactionHistoryResponse>(
+    const response = JSendBuilder.success<TransactionHistoryResponse>(
       transactionHistory,
-      200,
       'Transactions retrieved successfully',
     );
+
+    return res.status(200).json(response);
   }
 
-  async approve(req: Request, res: Response): Promise<void> {
+  async approve(
+    req: Request,
+    res: Response,
+  ): Promise<
+    Response<JSendSuccessResponse<Transaction>> | Response<JSendFailResponse>
+  > {
     const { id } = req.params;
 
     if (!id) {
-      res.jsendFail(
+      const response = JSendBuilder.fail(
         { id: 'Transaction ID is required' },
         'Missing required parameter',
-        400,
       );
-      return;
+      return res.status(400).json(response);
     }
 
     const transaction = await TransactionService.approveTransaction(id);
 
-    res.jsendSuccess<Transaction>(
+    const response = JSendBuilder.success<Transaction>(
       transaction,
-      200,
       'Transaction approved and processed successfully',
     );
+
+    return res.status(200).json(response);
   }
 
-  async reject(req: Request, res: Response): Promise<void> {
+  async reject(
+    req: Request,
+    res: Response,
+  ): Promise<
+    Response<JSendSuccessResponse<Transaction>> | Response<JSendFailResponse>
+  > {
     const { id } = req.params;
 
     if (!id) {
-      res.jsendFail(
+      const response = JSendBuilder.fail(
         { id: 'Transaction ID is required' },
         'Missing required parameter',
-        400,
       );
-      return;
+      return res.status(400).json(response);
     }
 
     const transaction = await TransactionService.rejectTransaction(id);
 
-    res.jsendSuccess<Transaction>(
+    const response = JSendBuilder.success<Transaction>(
       transaction,
-      200,
       'Transaction rejected successfully',
     );
+
+    return res.status(200).json(response);
   }
 }
 

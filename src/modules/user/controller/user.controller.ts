@@ -1,29 +1,34 @@
 import { Request, Response } from 'express';
 import UserService from '../service/user.service';
+import { JSendBuilderService } from '../../../utils/jsendBuilder';
 
 class UserController {
-  async getBalance(req: Request, res: Response): Promise<void> {
+  async getBalance(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
 
     if (!id) {
-      res.jsendFail(
+      const response = JSendBuilderService.fail(
         { id: 'User ID is required' },
         'Missing required parameter',
-        400,
+        { code: 400 },
       );
-      return;
+      return res.status(400).json(response);
     }
 
     const balance = await UserService.getBalance(id);
 
-    res.jsendSuccess<{ userId: string; balance: number }>(
+    const response = JSendBuilderService.success<{
+      userId: string;
+      balance: number;
+    }>(
       {
         userId: id,
         balance,
       },
-      200,
       'Balance retrieved successfully',
+      { code: 200 },
     );
+    return res.status(200).json(response);
   }
 }
 

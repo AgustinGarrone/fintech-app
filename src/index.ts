@@ -12,9 +12,9 @@ import {
   LATEST_VERSION,
   SUPPORTED_VERSIONS,
 } from './middleware/versionHandler';
-import { jsendMiddleware } from './utils/responseHelper';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 
@@ -53,11 +53,16 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// JSend response middleware
-app.use(jsendMiddleware);
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 10,
+  message: 'Too many requests, please try again later.',
+});
+
+app.use('/api/', limiter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+/* 
 app.get('/health', (_req, res) => {
   res.jsendSuccess(
     {
@@ -70,7 +75,7 @@ app.get('/health', (_req, res) => {
     200,
     'Server is running',
   );
-});
+}); */
 
 // API routes
 app.use('/api', routes);
