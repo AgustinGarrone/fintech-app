@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 import { BaseRepository } from '../repository/base.repository';
 import { ProblemError } from '../../errors/ProblemError';
 
@@ -22,9 +27,9 @@ export abstract class BaseService<
    */
   async findAll(
     args?: Parameters<TDelegate['findMany']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<TModel[]> {
-    return this.repository.findMany(args, tx);
+    return this.repository.findMany(args, tx as any);
   }
 
   /**
@@ -32,9 +37,9 @@ export abstract class BaseService<
    */
   async findOne(
     args: Parameters<TDelegate['findUnique']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<TModel | null> {
-    return this.repository.findUnique(args, tx);
+    return this.repository.findUnique(args, tx as any);
   }
 
   /**
@@ -42,10 +47,13 @@ export abstract class BaseService<
    */
   async findByIdOrFail(
     id: string,
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
     resourceName: string = 'Resource',
   ): Promise<TModel> {
-    const result = await this.repository.findUnique({ where: { id } }, tx);
+    const result = await this.repository.findUnique(
+      { where: { id } },
+      tx as any,
+    );
     if (!result) {
       throw ProblemError.notFound(`${resourceName} with id ${id} not found`, {
         resourceId: id,
@@ -60,10 +68,10 @@ export abstract class BaseService<
    */
   async findOneOrFail(
     args: Parameters<TDelegate['findUnique']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
     resourceName: string = 'Resource',
   ): Promise<TModel> {
-    const result = await this.repository.findUnique(args, tx);
+    const result = await this.repository.findUnique(args, tx as any);
     if (!result) {
       throw ProblemError.notFound(`${resourceName} not found`, {
         resourceType: resourceName,
@@ -77,9 +85,9 @@ export abstract class BaseService<
    */
   async create(
     args: Parameters<TDelegate['create']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<TModel> {
-    return this.repository.create(args, tx);
+    return this.repository.create(args, tx as any);
   }
 
   /**
@@ -87,9 +95,9 @@ export abstract class BaseService<
    */
   async update(
     args: Parameters<TDelegate['update']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<TModel> {
-    return this.repository.update(args, tx);
+    return this.repository.update(args, tx as any);
   }
 
   /**
@@ -97,9 +105,9 @@ export abstract class BaseService<
    */
   async delete(
     args: Parameters<TDelegate['delete']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<TModel> {
-    return this.repository.delete(args, tx);
+    return this.repository.delete(args, tx as any);
   }
 
   /**
@@ -107,9 +115,9 @@ export abstract class BaseService<
    */
   async count(
     args?: Parameters<TDelegate['count']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<number> {
-    return this.repository.count(args, tx);
+    return this.repository.count(args, tx as any);
   }
 
   /**
@@ -117,9 +125,9 @@ export abstract class BaseService<
    */
   async exists(
     args: Parameters<TDelegate['findUnique']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<boolean> {
-    return this.repository.exists(args, tx);
+    return this.repository.exists(args, tx as any);
   }
 
   /**
@@ -127,8 +135,8 @@ export abstract class BaseService<
    */
   async findManyAndCount(
     args?: Parameters<TDelegate['findMany']>[0],
-    tx?: PrismaClient,
+    tx?: PrismaClient | TransactionClient,
   ): Promise<[TModel[], number]> {
-    return this.repository.findManyAndCount(args, tx);
+    return this.repository.findManyAndCount(args, tx as any);
   }
 }

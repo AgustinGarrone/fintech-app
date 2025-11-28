@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema } from 'zod';
 
-export const validate = (schema: ZodSchema) => {
+//TODO: ajustar solo al body
+export const validate = (
+  schema: ZodSchema,
+  source: 'body' | 'query' | 'params' = 'body',
+) => {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
-      schema.parse({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
+      const data =
+        source === 'body'
+          ? req.body
+          : source === 'query'
+          ? req.query
+          : req.params;
+      schema.parse(data);
       next();
     } catch (error) {
       next(error);
