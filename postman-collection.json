@@ -1,0 +1,161 @@
+{
+  "v": 10,
+  "name": "fintech-app",
+  "folders": [
+    {
+      "v": 10,
+      "name": "v1",
+      "folders": [
+        {
+          "v": 10,
+          "name": "transactions",
+          "folders": [],
+          "requests": [
+            {
+              "v": "16",
+              "name": "get by user",
+              "method": "GET",
+              "endpoint": "http://localhost:3000/api/v1/transactions?userId=63908bf4-e5f8-4393-8bbf-e7a969f17070",
+              "params": [],
+              "headers": [],
+              "preRequestScript": "",
+              "testScript": "",
+              "auth": {
+                "authType": "inherit",
+                "authActive": true
+              },
+              "body": {
+                "contentType": null,
+                "body": null
+              },
+              "requestVariables": [],
+              "responses": {},
+              "_ref_id": "req_mii4x4av_ae92452a-260f-4732-93e1-045af72ba155"
+            },
+            {
+              "v": "16",
+              "name": "create transaction",
+              "method": "POST",
+              "endpoint": "http://localhost:3000/api/v1/transactions",
+              "params": [],
+              "headers": [],
+              "preRequestScript": "",
+              "testScript": "",
+              "auth": {
+                "authType": "inherit",
+                "authActive": true
+              },
+              "body": {
+                "contentType": "application/json",
+                "body": "{\n  \"fromUserId\":\"63908bf4-e5f8-4393-8bbf-e7a969f17070\",\n  \"toUserId\":\"f7be3ab3-9391-4f1d-a7eb-8be12d834ef9\",\n  \"amount\":12312\n}"
+              },
+              "requestVariables": [],
+              "responses": {},
+              "_ref_id": "req_mii5evr0_1677bbeb-4a14-46e7-bfb4-e2e06f186de2"
+            },
+            {
+              "v": "16",
+              "name": "approve",
+              "method": "PATCH",
+              "endpoint": "http://localhost:3000/api/v1/transactions/7033fcc0-de03-423c-87aa-276aafb68a2f/approve",
+              "params": [],
+              "headers": [],
+              "preRequestScript": "",
+              "testScript": "",
+              "auth": {
+                "authType": "inherit",
+                "authActive": true
+              },
+              "body": {
+                "contentType": null,
+                "body": null
+              },
+              "requestVariables": [],
+              "responses": {},
+              "_ref_id": "req_mii9yb25_c08f0859-e6f3-4b11-a552-b35c2847b1ce"
+            },
+            {
+              "v": "16",
+              "name": "reject",
+              "method": "GET",
+              "endpoint": "https://echo.hoppscotch.io",
+              "params": [],
+              "headers": [],
+              "preRequestScript": "",
+              "testScript": "",
+              "auth": {
+                "authType": "inherit",
+                "authActive": true
+              },
+              "body": {
+                "contentType": null,
+                "body": null
+              },
+              "requestVariables": [],
+              "responses": {},
+              "_ref_id": "req_mii9yesy_83efdfbb-94c5-4f7d-ac47-5f4271453d45"
+            }
+          ],
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "headers": [],
+          "variables": [],
+          "_ref_id": "coll_mii4wytl_b578764f-5287-48d4-9abb-c72a23b46f4d"
+        },
+        {
+          "v": 10,
+          "name": "user",
+          "folders": [],
+          "requests": [
+            {
+              "v": "16",
+              "name": "get balance",
+              "method": "GET",
+              "endpoint": "http://localhost:3000/api/v1/users/448db716-db47-483b-8aee-ae7a98e712cc/balance",
+              "params": [],
+              "headers": [],
+              "preRequestScript": "",
+              "testScript": "",
+              "auth": {
+                "authType": "inherit",
+                "authActive": true
+              },
+              "body": {
+                "contentType": null,
+                "body": null
+              },
+              "requestVariables": [],
+              "responses": {},
+              "_ref_id": "req_mii68ouo_8e7e6759-c23b-49cc-bff9-ad2e129dd780"
+            }
+          ],
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "headers": [],
+          "variables": [],
+          "_ref_id": "coll_mii68lxo_14a702db-bf11-42ee-982b-4576a7532a6f"
+        }
+      ],
+      "requests": [],
+      "auth": {
+        "authActive": true,
+        "authType": "inherit"
+      },
+      "headers": [],
+      "variables": [],
+      "_ref_id": "coll_mii4wsy7_88a531f8-85fc-47cf-9236-e7c2df3ef8a4"
+    }
+  ],
+  "requests": [],
+  "auth": {
+    "authActive": true,
+    "authType": "none"
+  },
+  "headers": [],
+  "variables": [],
+  "_ref_id": "coll_mii4wll3_a2a7491d-40e0-4ef3-878f-3327acf702ee"
+}

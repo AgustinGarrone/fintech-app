@@ -48,39 +48,6 @@ Casos de uso básicos
 
 ## 🛠️ Instalación y Configuración
 
-### Prerrequisitos
-
-- Node.js >= 18
-- PostgreSQL >= 16
-- npm o yarn
-
-### Setup
-
-```bash
-# Instalar dependencias
-npm install
-
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus credenciales
-
-# Generar cliente de Prisma
-npm run prisma:generate
-
-# Ejecutar migraciones
-npm run prisma:migrate
-
-# (Opcional) Seed de datos de prueba
-npm run prisma:seed
-
-# Desarrollo
-npm run dev
-
-# Producción
-npm run build
-npm start
-```
-
 ## 🔌 Endpoints Principales
 
 ### Health Check
@@ -133,7 +100,27 @@ La documentación interactiva está disponible en:
 
 - **Swagger UI**: `http://localhost:3000/api-docs`
 
-## 🐳 Docker
+## 📋 Logging
+
+Los logs se almacenan en `temp/logs/` organizados por fecha:
+
+- **Audit logs**: Transacciones y eventos de negocio
+- **Error logs**: Errores y excepciones
+
+Formato: `{type}-{transactionId}-{timestamp}.json`
+
+## 🛠️ Instalación y Configuración
+
+### Prerrequisitos
+
+- **Docker** y **Docker Compose** (recomendado)
+- Node.js >= 18
+- PostgreSQL >= 16
+- npm o yarn
+
+### Setup Recomendado: Docker 🐳
+
+**Recomiendo usar Docker** para una configuración rápida y consistente, para el desafío le puse más énfasis a este tipo de despliegue
 
 ```bash
 # Construir y ejecutar con Docker Compose
@@ -143,11 +130,38 @@ docker-compose up -d
 docker-compose logs -f app
 ```
 
-## 📋 Logging
+El contenedor se encarga automáticamente de:
 
-Los logs se almacenan en `temp/logs/` organizados por fecha:
+- Configurar PostgreSQL
+- Ejecutar migraciones
+- Seed de datos de prueba
+- Iniciar la aplicación
 
-- **Audit logs**: Transacciones y eventos de negocio
-- **Error logs**: Errores y excepciones
+### Setup Manual (Alternativa)
 
-Formato: `{type}-{transactionId}-{timestamp}.json`
+Si preferís ejecutar localmente sin Docker:
+
+```bash
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales
+
+# Generar cliente de Prisma
+npm run prisma:generate
+
+# Ejecutar migraciones
+npm run prisma:migrate
+
+# Seed de datos de prueba
+npm run prisma:seed
+
+# Desarrollo
+npm run dev
+
+# Producción
+npm run build
+npm start
+```
