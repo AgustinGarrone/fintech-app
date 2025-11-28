@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import TransactionService from '../service/transaction.service';
 import { Transaction } from '@prisma/client';
+import { TransactionHistoryResponse } from '../dto/transaction.dto';
 
 class TransactionController {
   private readonly transactionService: typeof TransactionService;
@@ -34,12 +35,12 @@ class TransactionController {
       return;
     }
 
-    const transactions = await TransactionService.getTransactionsByUserId(
+    const transactionHistory = await TransactionService.getTransactionsByUserId(
       userId,
     );
 
-    res.jsendSuccess<Transaction[]>(
-      transactions,
+    res.jsendSuccess<TransactionHistoryResponse>(
+      transactionHistory,
       200,
       'Transactions retrieved successfully',
     );

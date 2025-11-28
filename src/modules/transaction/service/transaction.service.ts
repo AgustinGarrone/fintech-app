@@ -1,10 +1,16 @@
-import { Prisma, Transaction } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  Transaction,
+  TransactionStatus as TransactionStatusEnum,
+} from '@prisma/client';
 import { BaseService } from '../../../commons/service/base.service';
 import { ProblemError } from '../../../errors/ProblemError';
 import TransactionRepository from '../repository/transaction.repository';
 import UserService from '../../user/service/user.service';
 import prisma from '../../../config/database';
-import { TransactionStatusEnum } from '../../../types/transaction';
+import TransactionMapper from '../mapper/transaction.mapper';
+import { TransactionHistoryResponse } from '../dto/transaction.dto';
 
 export class TransactionService extends BaseService<
   Transaction,
@@ -37,9 +43,10 @@ export class TransactionService extends BaseService<
     }
 
     return prisma.$transaction(async (tx) => {
-      // Verify both users exist
-      const fromUser = await UserService.findByIdOrFail(fromUserId, tx, 'User');
-      const toUser = await UserService.findByIdOrFail(toUserId, tx, 'User');
+      const [fromUser, toUser] = await Promise.all([
+        UserService.findByIdOrFail(fromUserId, tx, 'User'),
+        UserService.findByIdOrFail(toUserId, tx, 'User'),
+      ]);
 
       // Check if origin has sufficient balance
       const fromBalance = Number(fromUser.balance);
@@ -53,8 +60,8 @@ export class TransactionService extends BaseService<
       // Determine status based on amount
       const status =
         amount > this.MAX_AUTO_APPROVE_AMOUNT
-          ? TransactionStatusEnum.PENDING
-          : TransactionStatusEnum.APPROVED;
+          ? TransactionStatusEnum.APPROVED
+          : TransactionStatusEnum.PENDING;
 
       // Create transaction
       const transaction = await this.create(
@@ -63,13 +70,12 @@ export class TransactionService extends BaseService<
             fromUserId,
             toUserId,
             amount: new Prisma.Decimal(amount),
-            status,
-          } as any,
+            status: status as string,
+          } as unknown as Prisma.TransactionCreateInput,
         },
         tx,
       );
 
-      // If auto-approved, process the transfer
       if (status === TransactionStatusEnum.APPROVED) {
         await this.processTransfer(fromUser, toUser, amount, tx);
       }
@@ -78,15 +84,14 @@ export class TransactionService extends BaseService<
     });
   }
 
-  /**
-   * Get transactions by user ID
-   */
-  async getTransactionsByUserId(userId: string): Promise<Transaction[]> {
-    return this.findAll(
+  async getTransactionsByUserId(
+    userId: string,
+  ): Promise<TransactionHistoryResponse> {
+    const transactions = await this.findAll(
       {
         where: {
           OR: [{ fromUserId: userId }, { toUserId: userId }],
-        } as any,
+        } as Prisma.TransactionWhereInput,
         orderBy: { createdAt: 'desc' },
         include: {
           fromUser: {
@@ -95,15 +100,14 @@ export class TransactionService extends BaseService<
           toUser: {
             select: { id: true, name: true, email: true },
           },
-        } as any,
+        } as Prisma.TransactionInclude,
       },
       undefined,
     );
+
+    return TransactionMapper.toHistoryResponse(userId, transactions);
   }
 
-  /**
-   * Approve a pending transaction
-   */
   async approveTransaction(transactionId: string): Promise<Transaction> {
     return prisma.$transaction(async (tx) => {
       const transaction = await this.findByIdOrFail(
@@ -113,7 +117,7 @@ export class TransactionService extends BaseService<
       );
 
       // Verify transaction is pending
-      const txStatus = (transaction as any).status;
+      const txStatus = transaction.status;
       if (txStatus !== TransactionStatusEnum.PENDING) {
         throw ProblemError.badRequest(
           'Only pending transactions can be approved',
@@ -123,20 +127,12 @@ export class TransactionService extends BaseService<
         );
       }
 
-      // Get users
-      const fromUser = await UserService.findByIdOrFail(
-        (transaction as any).fromUserId,
-        tx,
-        'User',
-      );
-      const toUser = await UserService.findByIdOrFail(
-        (transaction as any).toUserId,
-        tx,
-        'User',
-      );
+      const [fromUser, toUser] = await Promise.all([
+        UserService.findByIdOrFail(transaction.fromUserId, tx, 'User'),
+        UserService.findByIdOrFail(transaction.toUserId, tx, 'User'),
+      ]);
 
-      // Check if origin has sufficient balance
-      const amount = Number((transaction as any).amount);
+      const amount = Number(transaction.amount);
       const fromBalance = Number(fromUser.balance);
       if (fromBalance < amount) {
         throw ProblemError.badRequest('Insufficient balance', {
@@ -172,7 +168,7 @@ export class TransactionService extends BaseService<
     );
 
     // Verify transaction is pending
-    const txStatus = (transaction as any).status;
+    const txStatus = transaction.status;
     if (txStatus !== TransactionStatusEnum.PENDING) {
       throw ProblemError.badRequest(
         'Only pending transactions can be rejected',
@@ -182,16 +178,12 @@ export class TransactionService extends BaseService<
       );
     }
 
-    // Update status to rejected
     return this.update({
       where: { id: transactionId },
-      data: { status: 'REJECTED' } as any,
+      data: { status: TransactionStatusEnum.REJECTED },
     });
   }
 
-  /**
-   * Process the transfer of funds between users
-   */
   private async processTransfer(
     fromUser: { id: string; balance: Prisma.Decimal },
     toUser: { id: string; balance: Prisma.Decimal },
@@ -201,17 +193,18 @@ export class TransactionService extends BaseService<
     const fromBalance = Number(fromUser.balance);
     const toBalance = Number(toUser.balance);
 
-    // Update balances
-    await UserService.updateBalance(
-      fromUser.id,
-      new Prisma.Decimal(fromBalance - amount),
-      tx,
-    );
-    await UserService.updateBalance(
-      toUser.id,
-      new Prisma.Decimal(toBalance + amount),
-      tx,
-    );
+    await Promise.all([
+      UserService.updateBalance(
+        fromUser.id,
+        new Prisma.Decimal(fromBalance - amount),
+        tx,
+      ),
+      UserService.updateBalance(
+        toUser.id,
+        new Prisma.Decimal(toBalance + amount),
+        tx,
+      ),
+    ]);
   }
 }
 
