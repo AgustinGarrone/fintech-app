@@ -23,6 +23,7 @@ model User {
   balance           Decimal            @default(0) @db.Decimal(15, 2)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  version  Int      @default(0)  
   transactionsSent  Transaction[]      @relation("TransactionFrom")
   transactionsReceived Transaction[]    @relation("TransactionTo")
 }

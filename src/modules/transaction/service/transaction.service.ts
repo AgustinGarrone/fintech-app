@@ -1,6 +1,5 @@
 import {
   Prisma,
-  PrismaClient,
   Transaction,
   TransactionStatus as TransactionStatusEnum,
 } from '@prisma/client';
@@ -193,8 +192,8 @@ export class TransactionService extends BaseService<
   }
 
   private async processTransfer(
-    fromUser: { id: string; balance: Prisma.Decimal },
-    toUser: { id: string; balance: Prisma.Decimal },
+    fromUser: { id: string; balance: Prisma.Decimal; version: number },
+    toUser: { id: string; balance: Prisma.Decimal; version: number },
     amount: number,
     transactionId: string,
     tx: any,
@@ -202,29 +201,103 @@ export class TransactionService extends BaseService<
     const fromBalance = Number(fromUser.balance);
     const toBalance = Number(toUser.balance);
 
-    await Promise.all([
-      UserService.updateBalance(
-        fromUser.id,
-        new Prisma.Decimal(fromBalance - amount),
-        tx,
-      ),
-      UserService.updateBalance(
-        toUser.id,
-        new Prisma.Decimal(toBalance + amount),
-        tx,
-      ),
-    ]);
+    try {
+      const fromUserUpdated = await tx.user.updateMany({
+        where: {
+          id: fromUser.id,
+          version: fromUser.version,
+        },
+        data: {
+          balance: new Prisma.Decimal(fromBalance - amount),
+          version: { increment: 1 },
+        },
+      });
 
-    this.logManager.logTransaction({
-      event: 'transfer',
-      transactionId: transactionId,
-      userId: fromUser.id,
-      amount,
-      currency: 'ARS',
-      previousBalance: fromBalance,
-      newBalance: fromBalance - amount,
-      status: TransactionStatusEnum.APPROVED,
-    });
+      if (fromUserUpdated.count === 0) {
+        const error = ProblemError.conflict(
+          'El saldo del usuario emisor fue modificado. Por favor, reintenta la transacción.',
+          {
+            userId: fromUser.id,
+            expectedVersion: fromUser.version,
+          },
+        );
+
+        this.logManager.logError({
+          level: 'warn',
+          message:
+            'Error al procesar transferencia: conflicto de versión en usuario emisor',
+          error: error,
+          userId: fromUser.id,
+          transactionId: transactionId,
+          metadata: {
+            fromUserId: fromUser.id,
+            toUserId: toUser.id,
+            amount,
+            expectedVersion: fromUser.version,
+          },
+        });
+
+        throw error;
+      }
+
+      const toUserUpdated = await tx.user.updateMany({
+        where: {
+          id: toUser.id,
+          version: toUser.version,
+        },
+        data: {
+          balance: new Prisma.Decimal(toBalance + amount),
+          version: { increment: 1 },
+        },
+      });
+
+      if (toUserUpdated.count === 0) {
+        const error = ProblemError.conflict(
+          'El saldo del usuario receptor fue modificado. Por favor, reintenta la transacción.',
+          {
+            userId: toUser.id,
+            expectedVersion: toUser.version,
+          },
+        );
+
+        this.logManager.logError({
+          level: 'warn',
+          message:
+            'Error al procesar transferencia: conflicto de versión en usuario receptor',
+          error: error,
+          userId: fromUser.id,
+          transactionId: transactionId,
+          metadata: {
+            fromUserId: fromUser.id,
+            toUserId: toUser.id,
+            amount,
+            expectedVersion: toUser.version,
+          },
+        });
+
+        throw error;
+      }
+
+      this.logManager.logTransaction({
+        event: 'transfer',
+        transactionId: transactionId,
+        userId: fromUser.id,
+        amount,
+        currency: 'ARS',
+        previousBalance: fromBalance,
+        newBalance: fromBalance - amount,
+        status: TransactionStatusEnum.APPROVED,
+        metadata: {
+          success: true,
+          toUserId: toUser.id,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ProblemError) {
+        throw error;
+      }
+      throw error;
+    }
   }
 }
 

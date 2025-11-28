@@ -1,11 +1,11 @@
+import { TransactionStatus as TransactionStatusEnum } from '@prisma/client';
+
 export type TransactionEventType =
   | 'withdraw'
   | 'deposit'
   | 'transfer'
   | 'approve'
   | 'reject';
-
-export type TransactionStatus = 'SUCCESS' | 'FAILED' | 'PENDING' | 'CANCELLED';
 
 export interface AuditLog {
   type: 'audit';
@@ -16,7 +16,7 @@ export interface AuditLog {
   currency: string;
   previousBalance: number;
   newBalance: number;
-  status: TransactionStatus;
+  status: TransactionStatusEnum;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
@@ -53,7 +53,7 @@ export interface CreateAuditLogDto {
   currency: string;
   previousBalance: number;
   newBalance: number;
-  status: TransactionStatus;
+  status: TransactionStatusEnum;
   metadata?: Record<string, unknown>;
 }
 
