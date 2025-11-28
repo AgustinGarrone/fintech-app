@@ -76,7 +76,6 @@ export const errorHandler = (
       message: err.message,
       metadata: {
         status: err.status,
-        type: err.type,
       },
     });
     return sendProblem(res, err);
